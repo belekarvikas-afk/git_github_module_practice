@@ -10,9 +10,11 @@ terraform {
     storage_account_name = "b18g35storageaccount2"
     container_name       = "tfstatefiles"
     key                  = "dvkiduniya.tfstate"
+    use_oidc = true
   }
 }
 
 provider "azurerm" {
   features {}
+  use_oidc = true
 }

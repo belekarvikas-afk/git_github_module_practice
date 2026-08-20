@@ -108,3 +108,56 @@ jobs:
         run: |
           terraform apply -auto-approve
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+name: Terraform Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: Terraform CI
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: parant_env
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate

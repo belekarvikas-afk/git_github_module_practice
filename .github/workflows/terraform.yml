@@ -1,38 +1,110 @@
-name: Terraform Pipeline
+
+name: Terraform Azure Deployment
 
 on:
-  push:
-    branches:
-      - main
-
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
+  id-token: write
   contents: read
 
 jobs:
   terraform:
-    name: Terraform CI
+    name: Terraform
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: parant_env
-
     steps:
-      - name: Checkout Code
+
+      # --------------------------------------------------
+      # 1. Checkout repository
+      # --------------------------------------------------
+      - name: Checkout
         uses: actions/checkout@v4
 
+
+      # --------------------------------------------------
+      # 2. Azure OIDC Login
+      # --------------------------------------------------
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+
+      # --------------------------------------------------
+      # 3. Verify Azure Login
+      # --------------------------------------------------
+      - name: Verify Azure Login
+        run: |
+          echo "Azure Account:"
+          az account show
+
+          echo ""
+          echo "Available Subscriptions:"
+          az account list -o table
+
+
+      # --------------------------------------------------
+      # 4. Setup Terraform
+      # --------------------------------------------------
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Format
-        run: terraform fmt -check
 
+      # --------------------------------------------------
+      # 5. Terraform Init
+      # --------------------------------------------------
       - name: Terraform Init
-        run: terraform init
+        working-directory: terraform
+        env:
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          terraform init
 
+
+      # --------------------------------------------------
+      # 6. Terraform Validate
+      # --------------------------------------------------
       - name: Terraform Validate
-        run: terraform validate
+        working-directory: terraform
+        env:
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          terraform validate
+
+
+      # --------------------------------------------------
+      # 7. Terraform Plan
+      # --------------------------------------------------
+      - name: Terraform Plan
+        working-directory: terraform
+        env:
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          terraform plan
+
+
+      # --------------------------------------------------
+      # 8. Terraform Apply
+      # --------------------------------------------------
+      - name: Terraform Apply
+        working-directory: terraform
+        env:
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          terraform apply -auto-approve
+
