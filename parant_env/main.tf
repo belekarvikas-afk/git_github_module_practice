@@ -1,5 +1,5 @@
 module "resource_group" {
-  source         = "../module/01_resources_group"
+  source         = "../module/01_azurerm_resources_group"
   resource_group = var.resource_group
 
 }
